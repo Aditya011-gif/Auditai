@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ResultsDashboard } from "@/components/results-dashboard";
 import { getSampleReport } from "@/lib/sample-report";
 import { prisma } from "@/lib/prisma";
+import { formatCurrency } from "@/lib/utils";
 import type { AuditInput, AuditResult, ToolRecommendation } from "@/types/audit";
 
 interface PageProps {
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const report = await getReport(slug);
   if (!report) return { title: "Audit report not found" };
   return {
-    title: `${report.totals.annualSavings.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })} annual AI savings found`,
+    title: `${formatCurrency(report.totals.annualSavings, report.input.currency)} annual AI savings found`,
     description: report.summary,
     openGraph: {
       title: `AuditAI found ${report.totals.savingsPercentage}% AI spend savings`,
@@ -54,4 +55,3 @@ export default async function ReportPage({ params }: PageProps) {
   if (!report) notFound();
   return <ResultsDashboard result={report} />;
 }
-

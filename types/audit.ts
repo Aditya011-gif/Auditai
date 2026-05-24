@@ -1,3 +1,5 @@
+import type { CurrencyCode } from "@/lib/currency";
+
 export type UseCase = "coding" | "writing" | "research" | "data" | "mixed";
 export type UsageIntensity = "low" | "medium" | "high";
 
@@ -24,6 +26,7 @@ export interface AuditInput {
   teamSize: number;
   companyStage: "solo" | "pre-seed" | "seed" | "series-a" | "growth";
   primaryUseCase: UseCase;
+  currency: CurrencyCode;
   tools: SelectedTool[];
   apiUsage: {
     tokenSpend: number;
@@ -61,4 +64,3 @@ export interface AuditResult {
   summary: string;
   generatedAt: string;
 }
-

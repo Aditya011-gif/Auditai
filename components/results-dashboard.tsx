@@ -9,12 +9,14 @@ import { ArrowDownRight, Calendar, CheckCircle2, Lock, Mail, Sparkles } from "lu
 import type { AuditResult } from "@/types/audit";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { convertUsd } from "@/lib/currency";
 
 const colors = ["#2dd4bf", "#818cf8", "#f472b6", "#facc15", "#60a5fa", "#fb7185", "#34d399", "#c084fc"];
 
 export function ResultsDashboard({ result }: { result: AuditResult }) {
   const [leadOpen, setLeadOpen] = useState(result.totals.monthlySavings > 0);
-  const highSavings = result.totals.monthlySavings > 500;
+  const currency = result.input.currency ?? "USD";
+  const highSavings = result.totals.monthlySavings > convertUsd(500, currency);
   const pieData = result.recommendations.map((item) => ({ name: item.toolName, value: item.currentSpend }));
   const barData = result.recommendations.map((item) => ({
     name: item.toolName,
@@ -39,11 +41,11 @@ export function ResultsDashboard({ result }: { result: AuditResult }) {
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-sm text-primary">
               <Sparkles className="size-4" /> {highSavings ? "Credex-qualified savings" : "Optimization report"}
             </div>
-            <h1 className="text-balance text-4xl font-semibold sm:text-6xl">{formatCurrency(result.totals.monthlySavings)} monthly savings found</h1>
+            <h1 className="text-balance text-4xl font-semibold sm:text-6xl">{formatCurrency(result.totals.monthlySavings, currency)} monthly savings found</h1>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <Metric label="Annual savings" value={formatCurrency(result.totals.annualSavings)} />
+              <Metric label="Annual savings" value={formatCurrency(result.totals.annualSavings, currency)} />
               <Metric label="Savings rate" value={formatPercent(result.totals.savingsPercentage)} />
-              <Metric label="Current spend" value={`${formatCurrency(result.totals.monthlySpend)}/mo`} />
+              <Metric label="Current spend" value={`${formatCurrency(result.totals.monthlySpend, currency)}/mo`} />
             </div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="rounded-2xl border border-white/10 bg-white/[.04] p-6">
@@ -98,9 +100,9 @@ export function ResultsDashboard({ result }: { result: AuditResult }) {
               </div>
               <p className="mt-4 leading-7 text-muted-foreground">{item.explanation}</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <SmallStat label="Current" value={formatCurrency(item.currentSpend)} />
-                <SmallStat label="Optimized" value={formatCurrency(item.optimizedSpend)} />
-                <SmallStat label="Savings" value={formatCurrency(item.monthlySavings)} />
+                <SmallStat label="Current" value={formatCurrency(item.currentSpend, currency)} />
+                <SmallStat label="Optimized" value={formatCurrency(item.optimizedSpend, currency)} />
+                <SmallStat label="Savings" value={formatCurrency(item.monthlySavings, currency)} />
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {item.alternatives.map((alt) => <span key={alt} className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted-foreground">{alt}</span>)}

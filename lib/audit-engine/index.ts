@@ -1,15 +1,17 @@
 import { nanoid } from "nanoid";
 import type { AuditInput, AuditResult, SelectedTool, ToolRecommendation } from "@/types/audit";
+import { convertUsd } from "@/lib/currency";
 import { getPlanPrice, pricingCatalog } from "./pricing";
 
 function clampSavings(value: number) {
   return Math.max(0, Math.round(value));
 }
 
-function estimatedPlanSpend(tool: SelectedTool, plan: string, fallback: number) {
+function estimatedPlanSpend(input: AuditInput, tool: SelectedTool, plan: string, fallback: number) {
   const planPrice = getPlanPrice(tool.id, plan);
   if (!planPrice) return fallback;
-  return Math.round(planPrice.perSeat ? planPrice.monthly * tool.seats : planPrice.monthly);
+  const usdSpend = planPrice.perSeat ? planPrice.monthly * tool.seats : planPrice.monthly;
+  return Math.round(convertUsd(usdSpend, input.currency));
 }
 
 function baseRecommendation(tool: SelectedTool): ToolRecommendation {
@@ -52,7 +54,7 @@ function recommendForTool(input: AuditInput, tool: SelectedTool): ToolRecommenda
       alternatives: ["GitHub Copilot Business for policy controls", "Windsurf Pro for lower seat cost"],
       action: "downgrade"
     };
-    return withSavings(rec, estimatedPlanSpend(tool, "Pro", tool.seats * 20));
+    return withSavings(rec, estimatedPlanSpend(input, tool, "Pro", convertUsd(tool.seats * 20, input.currency)));
   }
 
   if (tool.id === "chatgpt" && tool.plan === "Team" && tool.seats <= 2) {
@@ -64,7 +66,7 @@ function recommendForTool(input: AuditInput, tool: SelectedTool): ToolRecommenda
       alternatives: ["Claude Pro for writing-heavy work", "Per-seat review before next renewal"],
       action: "downgrade"
     };
-    return withSavings(rec, estimatedPlanSpend(tool, "Plus", tool.seats * 20));
+    return withSavings(rec, estimatedPlanSpend(input, tool, "Plus", convertUsd(tool.seats * 20, input.currency)));
   }
 
   if (tool.id === "gemini" && tool.plan === "Ultra" && tool.usageIntensity === "low") {
@@ -76,10 +78,10 @@ function recommendForTool(input: AuditInput, tool: SelectedTool): ToolRecommenda
       alternatives: ["ChatGPT Plus for general assistant work", "Gemini API for bursty workloads"],
       action: "downgrade"
     };
-    return withSavings(rec, estimatedPlanSpend(tool, "Pro", Math.max(20, tool.seats * 19.99)));
+    return withSavings(rec, estimatedPlanSpend(input, tool, "Pro", convertUsd(Math.max(20, tool.seats * 19.99), input.currency)));
   }
 
-  if (tool.id === "openai-api" && tool.monthlySpend > 500 && input.primaryUseCase === "writing") {
+  if (tool.id === "openai-api" && tool.monthlySpend > convertUsd(500, input.currency) && input.primaryUseCase === "writing") {
     rec = {
       ...rec,
       optimizedPlan: "Claude Max + capped OpenAI API",
@@ -88,10 +90,10 @@ function recommendForTool(input: AuditInput, tool: SelectedTool): ToolRecommenda
       alternatives: ["Claude Max for heavy writing", "Batch API for non-urgent generation", "Prompt caching where available"],
       action: "switch"
     };
-    return withSavings(rec, Math.max(200, tool.monthlySpend * 0.55));
+    return withSavings(rec, Math.max(convertUsd(200, input.currency), tool.monthlySpend * 0.55));
   }
 
-  if (tool.id === "anthropic-api" && tool.monthlySpend > 750 && tool.usageIntensity !== "low") {
+  if (tool.id === "anthropic-api" && tool.monthlySpend > convertUsd(750, input.currency) && tool.usageIntensity !== "low") {
     rec = {
       ...rec,
       optimizedPlan: "Anthropic API with batch/cache controls",
@@ -112,7 +114,7 @@ function recommendForTool(input: AuditInput, tool: SelectedTool): ToolRecommenda
       alternatives: ["Cursor Pro for agent-heavy coding", "Windsurf Teams for lower list price"],
       action: "downgrade"
     };
-    return withSavings(rec, estimatedPlanSpend(tool, "Business", tool.seats * 19));
+    return withSavings(rec, estimatedPlanSpend(input, tool, "Business", convertUsd(tool.seats * 19, input.currency)));
   }
 
   if (tool.id === "windsurf" && tool.plan === "Teams" && tool.seats < 4) {
@@ -124,10 +126,10 @@ function recommendForTool(input: AuditInput, tool: SelectedTool): ToolRecommenda
       alternatives: ["Cursor Pro", "GitHub Copilot Individual"],
       action: "downgrade"
     };
-    return withSavings(rec, estimatedPlanSpend(tool, "Pro", tool.seats * 15));
+    return withSavings(rec, estimatedPlanSpend(input, tool, "Pro", convertUsd(tool.seats * 15, input.currency)));
   }
 
-  if (tool.monthlySpend > 1000) {
+  if (tool.monthlySpend > convertUsd(1000, input.currency)) {
     rec = {
       ...rec,
       optimizedPlan: `${tool.plan} via negotiated credits`,
@@ -172,6 +174,5 @@ export function createFallbackSummary(result: Pick<AuditResult, "recommendations
     return "Your AI stack looks relatively disciplined. The current spend is not showing obvious waste, so the best next step is monitoring usage by team and revisiting vendor commitments before renewal dates. Keep the report active and re-run it when seats, API traffic, or model mix changes.";
   }
 
-  return `Your team is spending about $${result.totals.monthlySpend.toLocaleString()} per month on AI tools, with an estimated $${result.totals.monthlySavings.toLocaleString()} in monthly savings available. The clearest opportunity is ${top.toolName}, where ${top.explanation.toLowerCase()} Prioritize plan right-sizing first, then move high-volume API workloads into credits, batch jobs, or capped subscription plans.`;
+  return `Your team is spending about ${result.input.currency} ${result.totals.monthlySpend.toLocaleString()} per month on AI tools, with an estimated ${result.input.currency} ${result.totals.monthlySavings.toLocaleString()} in monthly savings available. The clearest opportunity is ${top.toolName}, where ${top.explanation.toLowerCase()} Prioritize plan right-sizing first, then move high-volume API workloads into credits, batch jobs, or capped subscription plans.`;
 }
-

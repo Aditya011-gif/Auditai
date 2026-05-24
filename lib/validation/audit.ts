@@ -13,6 +13,7 @@ export const auditInputSchema = z.object({
   teamSize: z.number().int().min(1).max(5000),
   companyStage: z.enum(["solo", "pre-seed", "seed", "series-a", "growth"]),
   primaryUseCase: z.enum(["coding", "writing", "research", "data", "mixed"]),
+  currency: z.enum(["USD", "INR", "EUR", "GBP"]),
   tools: z.array(selectedToolSchema).min(1).refine((tools) => tools.some((tool) => tool.enabled), {
     message: "Select at least one AI tool."
   }),
@@ -34,4 +35,3 @@ export const leadSchema = z.object({
 
 export type AuditInputValues = z.infer<typeof auditInputSchema>;
 export type LeadValues = z.infer<typeof leadSchema>;
-

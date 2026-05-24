@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { defaultTools } from "@/lib/default-audit";
+import { currencyOptions } from "@/lib/currency";
+import { defaultAuditInput, defaultTools } from "@/lib/default-audit";
 import { pricingCatalog } from "@/lib/audit-engine/pricing";
 import { auditInputSchema, type AuditInputValues } from "@/lib/validation/audit";
 import { formatCurrency } from "@/lib/utils";
@@ -29,9 +30,10 @@ export function AuditForm() {
   const { draft, setDraft } = useAuditStore();
   const [step, setStep] = useState(0);
   const [isSubmitting, setSubmitting] = useState(false);
+  const initialDraft = { ...defaultAuditInput, ...draft, apiUsage: { ...defaultAuditInput.apiUsage, ...draft.apiUsage } };
   const form = useForm<AuditInputValues>({
     resolver: zodResolver(auditInputSchema),
-    defaultValues: draft,
+    defaultValues: initialDraft,
     mode: "onChange"
   });
   const values = form.watch();
@@ -65,7 +67,7 @@ export function AuditForm() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <Link href="/" className="text-sm text-muted-foreground">AuditAI</Link>
-          <div className="text-sm text-muted-foreground">{formatCurrency(totalSpend)}/mo selected</div>
+          <div className="text-sm text-muted-foreground">{formatCurrency(totalSpend, values.currency)}/mo selected</div>
         </div>
         <div className="glass rounded-2xl p-5 sm:p-7">
           <div className="mb-7 grid gap-2 sm:grid-cols-4">
@@ -91,6 +93,12 @@ export function AuditForm() {
                         <option value="solo">Solo</option><option value="pre-seed">Pre-seed</option><option value="seed">Seed</option><option value="series-a">Series A</option><option value="growth">Growth</option>
                       </select>
                     </label>
+                    <label className="rounded-2xl border border-white/10 bg-white/[.04] p-4 sm:col-span-2">
+                      <span className="text-sm text-muted-foreground">Currency</span>
+                      <select className="mt-3 w-full rounded-xl border border-white/10 bg-[#0d111a] p-3" {...form.register("currency")}>
+                        {currencyOptions.map((currency) => <option key={currency.code} value={currency.code}>{currency.label}</option>)}
+                      </select>
+                    </label>
                   </div>
                   <div className="mt-6 grid gap-3 sm:grid-cols-5">
                     {useCases.map(([value, label]) => (
@@ -109,7 +117,7 @@ export function AuditForm() {
                       <p className="mt-2 text-sm text-muted-foreground">Toggle tools you pay for, then adjust plan, spend, seats, and usage.</p>
                     </div>
                     <div className="rounded-full border border-white/10 bg-white/[.04] px-4 py-2 text-sm text-muted-foreground">
-                      {selectedTools.length} tools · {formatCurrency(totalSpend)}/mo
+                      {selectedTools.length} tools · {formatCurrency(totalSpend, values.currency)}/mo
                     </div>
                   </div>
                   <div className="mt-6 grid gap-3">
@@ -173,11 +181,11 @@ export function AuditForm() {
                   <h1 className="text-3xl font-semibold">Review your audit</h1>
                   <div className="mt-6 rounded-2xl border border-white/10 bg-white/[.04] p-5">
                     <div className="text-sm text-muted-foreground">Estimated current AI spend</div>
-                    <div className="mt-2 text-5xl font-semibold">{formatCurrency(totalSpend)}<span className="text-lg text-muted-foreground">/mo</span></div>
-                    <div className="mt-2 text-muted-foreground">{formatCurrency(totalSpend * 12)} estimated annual cost</div>
+                    <div className="mt-2 text-5xl font-semibold">{formatCurrency(totalSpend, values.currency)}<span className="text-lg text-muted-foreground">/mo</span></div>
+                    <div className="mt-2 text-muted-foreground">{formatCurrency(totalSpend * 12, values.currency)} estimated annual cost</div>
                   </div>
                   <div className="mt-4 grid gap-3">
-                    {values.tools?.filter((tool) => tool.enabled).map((tool) => <div className="rounded-xl bg-white/[.04] p-3 text-sm" key={tool.id}>{pricingCatalog[tool.id].name} - {tool.plan} - {formatCurrency(tool.monthlySpend)}</div>)}
+                    {values.tools?.filter((tool) => tool.enabled).map((tool) => <div className="rounded-xl bg-white/[.04] p-3 text-sm" key={tool.id}>{pricingCatalog[tool.id].name} - {tool.plan} - {formatCurrency(tool.monthlySpend, values.currency)}</div>)}
                   </div>
                   {form.formState.errors.root ? <p className="mt-4 text-sm text-rose-300">{form.formState.errors.root.message}</p> : null}
                 </motion.section>

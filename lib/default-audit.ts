@@ -15,6 +15,7 @@ export const defaultAuditInput: AuditInput = {
   teamSize: 4,
   companyStage: "seed",
   primaryUseCase: "writing",
+  currency: "USD",
   tools: defaultTools,
   apiUsage: {
     tokenSpend: 850,
@@ -22,4 +23,3 @@ export const defaultAuditInput: AuditInput = {
     averageMonthlyUsage: "Marketing drafts, customer support macros, and weekly analysis summaries."
   }
 };
-
