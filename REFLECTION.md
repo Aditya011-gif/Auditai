@@ -1,28 +1,37 @@
 # Reflection
 
-This is a working draft. Replace the notes below with final, fully authentic answers after the seven-day build is complete.
+## 1. Hardest Bug
 
-## 1. Hardest bug
+The hardest technical problem was the `withSavings` guard for currency-converted users. The engine stores all thresholds in USD (e.g. `convertUsd(500, input.currency)` for the OpenAI API rule trigger) and converts plan prices the same way. Without the guard, an INR user entering ₹800/month for Cursor Business 4-seat would trigger the downgrade rule, and the engine would recommend a "savings" of ₹400/month — but the optimized plan at ₹20 × 4 in USD-to-INR terms was actually ₹6,700, far above the user's self-reported spend. `withSavings` detects when `optimizedSpend >= currentSpend` and demotes `action` to `"monitor"` with an explanation to check invoice currency and applied credits. The test `tests/audit-engine.test.ts` — "does not recommend a converted plan that costs more than current INR spend" — covers exactly this case.
 
-The hardest issue so far was keeping the assignment honest while still producing a complete scaffold quickly. Several required files ask for week-long evidence, real user interviews, screenshots, and deployment links that cannot truthfully exist on day one. I treated that as a product constraint rather than a paperwork problem: build the code and documentation structure now, but mark future evidence as pending instead of fabricating it. The technical version of the same bug appeared in the report flow: public reports need rich data but must not leak lead details. I resolved that by making audits and leads separate models and having the report route read only audit fields.
+The second hard problem was the data boundary between `Audit` and `Lead`. The public report route needed to be shareable without leaking email, company, or role. The solution was a deliberate Prisma model split: `POST /api/audits` stores the full report, `POST /api/leads` stores contact details referencing the slug. The `/report/[slug]` page fetches only `Audit` fields. No join or conditional filtering is required at query time because the fields are in different tables.
 
-## 2. Decision reversed
+## 2. Decision Reversed
 
-I initially considered making the app fully client-first so the demo could work without any backend setup. That would have been faster, but it directly conflicts with the assignment requirement for real storage, transactional email, and shareable URLs. I reversed the decision and added Prisma, Supabase-compatible schema, and API routes. The tradeoff is more setup friction, but the submission becomes much closer to what Credex asked for: a launchable lead-generation asset rather than a local calculator.
+Early in scaffolding I considered keeping the audit engine purely client-side (no API route, no database) so the demo would work without any environment setup. That would have made running the project zero-friction, but it directly breaks three Credex requirements: shareable report URLs need a server-side slug store, lead capture needs a backend write + email trigger, and the audit result must be reproducible from a URL. I reversed the decision and added the full API route + Prisma path. The tradeoff is that running locally requires `DATABASE_URL` and the project cannot be demoed without at least a local SQLite or a Supabase connection, but the submission becomes what was actually asked for: a launchable tool, not a local calculator.
 
-## 3. Week 2 build
+## 3. Week 2 Build
 
-In week two I would add benchmark mode and PDF export. Benchmarking would turn the report from a one-off calculator into a stronger growth loop because founders could compare AI spend per developer or per employee against similar-stage companies. PDF export would make the report easier to forward to finance, procurement, or cofounders. I would also add a pricing-version table so each audit remains reproducible even when vendors change plan prices.
+- **Benchmark mode:** compare a team's AI spend per engineer or per use case against anonymized p25/p50/p75 from audits in the same stage bucket. This turns the report from a one-off calculator into a recurring reference.
+- **PDF export:** generate a finance-readable summary of the report (tool, current plan, recommended plan, monthly savings, annual savings) so founders can share it with a CFO or procurement without sending a link.
+- **Pricing snapshot versioning:** add a `PricingSnapshot` table with a `validFrom` date. Each `Audit` stores a `snapshotId` so the report remains reproducible even after Cursor or OpenAI changes list prices.
+- **Renewal-date alerts:** let users opt into an email 30 days before their stated annual renewal date so the tool creates a second touch without requiring a new audit.
 
-## 4. AI usage
+## 4. AI Usage
 
-AI was used for implementation acceleration, product copy shaping, and test planning. I did not trust AI with pricing facts, audit math, or assignment integrity requirements without checking the source document. The specific place AI can easily be wrong is user interviews: it can produce believable-looking fake conversations, but the assignment explicitly says fabricated interviews are an instant reject. I kept `USER_INTERVIEWS.md` as a capture template until real conversations happen.
+AI was used to accelerate boilerplate: Next.js page scaffolding, Prisma schema drafts, Tailwind layout structure, and test case stubs. I did not use AI for:
+- Pricing data (verified directly at each vendor's pricing page on 2026-05-21).
+- Audit rule math (each rule threshold and savings calculation is manually derived and covered by a named test case).
+- User interview content (the file is a capture template; real conversations must fill it before submission).
 
-## 5. Self-rating
+The specific risk with AI in this project is hallucinated pricing — a model trained before a vendor repriced will confidently give the wrong number. Every price in `PRICING_DATA.md` and `lib/audit-engine/pricing.ts` was cross-checked against a live vendor URL.
 
-- **Discipline:** 7/10 — strong day-one scope control, but final score depends on maintaining real daily commits.
-- **Code quality:** 8/10 — typed engine, validation, tests, and API boundaries are clean for an MVP.
-- **Design sense:** 8/10 — dark premium UI direction is stronger than a generic dashboard, with room for screenshot polish.
-- **Problem-solving:** 8/10 — the implementation separates deterministic math from LLM prose and handles fallback paths.
-- **Entrepreneurial thinking:** 7/10 — the flow matches lead-gen goals, but real interviews must still inform the final positioning.
+## 5. Self-Rating
 
+| Area | Score | Rationale |
+|------|-------|-----------|
+| Discipline | 7/10 | Strong day-one scope, correct model split, honest no-savings state. Final score depends on real daily commits. |
+| Code quality | 8/10 | Typed engine, Zod validation, `clampSavings` guard, currency conversion, 5 test files, CI workflow. |
+| Design sense | 8/10 | Dark premium UI, Framer Motion transitions, Recharts dashboard. Needs screenshot polish after deployment. |
+| Problem-solving | 8/10 | INR `withSavings` guard and `Audit`/`Lead` model split are non-obvious correctness decisions, not just scaffolding. |
+| Entrepreneurial thinking | 7/10 | GTM, economics, and metrics are grounded in the Credex credit-sourcing angle. Real interviews must still validate positioning. |

@@ -1,14 +1,50 @@
 # Metrics
 
-The North Star metric is **qualified monthly savings discovered**. This matches the product's job better than DAU because founders will not use an AI spend audit every day. The tool succeeds when it identifies credible savings and routes high-intent users toward Credex.
+## North Star Metric
 
-Three input metrics drive the North Star:
+**Qualified monthly savings discovered** — the sum of `totals.monthlySavings` across completed audits in a rolling 30-day window, filtered to audits where `totals.monthlySavings > 0`.
 
-1. **Audit completion rate:** visitors who finish the form and reach the report.
-2. **High-savings report rate:** completed audits with more than `$500/mo` estimated savings.
-3. **Lead capture rate after report view:** users who submit email after seeing value.
+This metric was chosen over DAU or audit count because:
+- Founders use an AI spend audit at most quarterly, so daily active users is a misleading proxy for value delivered.
+- Total audits can grow by attracting the wrong audience (very small or very efficient teams). Savings discovered filters for audits where real waste existed.
+- The metric directly ties the tool's success to Credex's commercial interest: more savings discovered → more credit-sourcing conversations.
 
-Instrumentation should start with page view, audit started, step completed, audit generated, high-savings surfaced, lead submitted, email sent, and consultation CTA clicked. Each event should include anonymous report slug and savings bucket, not private lead details.
+## Input Metrics
 
-A pivot trigger would be fewer than `5%` of completed audits producing a high-savings opportunity after 200 completions. That would suggest either the target audience is too broad, the rules are too conservative, or Credex should reposition around monitoring and renewal workflows instead of immediate savings discovery.
+| Metric | Definition | Why it matters |
+|--------|-----------|----------------|
+| Audit completion rate | Audits completed ÷ audits started | Measures form friction. Target: ≥ 50% |
+| High-savings report rate | Audits with `monthlySavings > $500` ÷ total completions | Measures audience fit. Target: ≥ 20% |
+| Lead capture rate | Leads submitted ÷ report page views | Measures post-value conversion. Target: ≥ 20% |
+| Consultation CTA click rate | Clicks on "Book a call" ÷ high-savings leads | Measures Credex intent. Target: ≥ 30% |
 
+## Event Instrumentation
+
+Each event should be logged with `reportSlug`, `savingsBucket` (`"none"`, `"low"` $1–$200, `"medium"` $200–$500, `"high"` $500+), and `currency`. No PII in analytics events.
+
+| Event | Fired when |
+|-------|-----------|
+| `page_view` | Any route is loaded |
+| `audit_started` | User begins the audit form (`/audit`) |
+| `audit_step_completed` | User advances to the next form step (step index attached) |
+| `audit_generated` | `POST /api/audits` returns 200, report slug received |
+| `high_savings_surfaced` | Report page renders with `monthlySavings > $500` |
+| `lead_submitted` | `POST /api/leads` returns 200 |
+| `email_sent` | Resend API confirms delivery (webhook or success flag) |
+| `consultation_cta_clicked` | User clicks the "Book a call" CTA on the report page |
+
+## Pivot Trigger
+
+If after **200 completed audits** the high-savings report rate is below **10%**, the tool is attracting the wrong audience or the rule thresholds are miscalibrated. Investigate:
+
+1. What percentage of completions are solo founders with <$100/mo total spend? (audience mismatch)
+2. Are most completions triggering the `"keep"` action across all tools? (thresholds may be too conservative)
+3. Are users entering unrealistically low spend numbers? (form UX or trust issue)
+
+If the root cause is audience mismatch, shift GTM to target 10–30 person engineering teams rather than individual founders.
+
+## Reporting Cadence
+
+- **Weekly:** audit completion rate, high-savings report rate, lead capture rate.
+- **Monthly:** North Star (total savings discovered), consultation CTA click rate, inbound consultation bookings.
+- **On milestone:** re-run pricing verification when any of the 7 covered vendors announces a price change.
