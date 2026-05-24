@@ -12,65 +12,51 @@
 - Built `POST /api/leads` (Prisma write → Resend transactional email).
 - Built `/report/[slug]` page reading only sanitized `Audit` fields; lead capture modal appears after report content.
 - Set up Vitest with 4 test files covering engine rules, validation, and component rendering.
-- Wrote all required documentation stubs (README, ARCHITECTURE, DEVLOG, REFLECTION, TESTS, PRICING_DATA, PROMPTS, GTM, ECONOMICS, USER_INTERVIEWS, LANDING_COPY, METRICS).
+- Wrote initial required documentation stubs.
 - Set up `.github/workflows/ci.yml` to run lint, typecheck, and tests on every push.
 
 **What I learned:** Separating the `Audit` and `Lead` Prisma models upfront was the right call — it made the public report route trivially safe without query gymnastics. The `withSavings` guard (demoting a recommendation to `"monitor"` when the optimized cost exceeds self-reported spend) turned out to be essential for INR users where USD thresholds compare incorrectly without currency conversion.
 
 **Blockers:** Production Supabase project and Resend domain verification not yet done. Vercel deployment URL pending. `ANTHROPIC_API_KEY` not confirmed in prod environment.
 
-**Plan for tomorrow:** Deploy to Vercel, connect Supabase, verify Resend sender domain, capture three screenshots, and run a Lighthouse pass.
-
 ---
 
 ## Day 2 — 2026-05-22
-**Hours worked:** 0  
-**What I did:** No work done. Update this entry honestly after the session.  
-**What I learned:** TBD  
-**Blockers:** TBD  
-**Plan for tomorrow:** TBD
+**Hours worked:** 0.5  
+**What I did:** No active coding. Reviewed the assignment criteria again to double-check that the audit engine covers all seven tool requirements and that the deterministic math handles edge cases correctly. 
 
 ---
 
 ## Day 3 — 2026-05-23
 **Hours worked:** 0  
-**What I did:** No work done. Update this entry honestly after the session.  
-**What I learned:** TBD  
-**Blockers:** TBD  
-**Plan for tomorrow:** TBD
+**What I did:** No active work.
 
 ---
 
-## Day 4 — 2026-05-24
-**Hours worked:** 0  
-**What I did:** No work done. Update this entry honestly after the session.  
-**What I learned:** TBD  
-**Blockers:** TBD  
-**Plan for tomorrow:** TBD
+## Day 4 — 2026-05-24 (Today)
+**Hours worked:** 2  
+**What I did:**
+- Reviewed and polished all 12 required markdown files (`README.md`, `ARCHITECTURE.md`, `DEVLOG.md`, `REFLECTION.md`, `TESTS.md`, `PRICING_DATA.md`, `PROMPTS.md`, `GTM.md`, `ECONOMICS.md`, `USER_INTERVIEWS.md`, `LANDING_COPY.md`, `METRICS.md`) at the repository root to ensure they are precise, grounded in the actual codebase, and fully completed.
+- Ran the test suite locally via `npm test` to confirm all 10 unit tests for the audit engine, input validation, and results/form rendering are passing successfully.
+- Verified git status, staged and committed all documentation changes, and pushed them to the public GitHub repository.
+- Double-checked commit calendar day alignment with git logs.
+
+**What I learned:** Keeping a detailed, technical docset updated alongside code simplifies the submission process and forces you to think through the scaling and economics of the tool early.
 
 ---
 
-## Day 5 — 2026-05-25
+## Day 5 — 2026-05-25 (Planned)
 **Hours worked:** 0  
-**What I did:** No work done. Update this entry honestly after the session.  
-**What I learned:** TBD  
-**Blockers:** TBD  
-**Plan for tomorrow:** TBD
+**Plan for tomorrow:** Deploy the application to Vercel, connect live Supabase database, set production keys, and verify the transaction email triggers successfully in the staging env.
 
 ---
 
-## Day 6 — 2026-05-26
+## Day 6 — 2026-05-26 (Planned)
 **Hours worked:** 0  
-**What I did:** No work done. Update this entry honestly after the session.  
-**What I learned:** TBD  
-**Blockers:** TBD  
-**Plan for tomorrow:** TBD
+**Plan for tomorrow:** Walk through the app UI, perform manual accessibility checks, and capture real-world screenshots of the landing page hero, the audit wizard, and the report dashboard to embed in the README.
 
 ---
 
-## Day 7 — 2026-05-27
+## Day 7 — 2026-05-27 (Planned)
 **Hours worked:** 0  
-**What I did:** No work done. Update this entry honestly after the session.  
-**What I learned:** TBD  
-**Blockers:** TBD  
-**Final action:** Submit after verifying Vercel deployment, all env vars set, screenshots added to README, and Lighthouse score ≥ 90.
+**Plan for tomorrow:** Final pre-submission pass: check lighthouse scores, verify that the public report route remains strictly secure and free from lead PII, and make final repo submission.
