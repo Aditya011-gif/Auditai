@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { currencyOptions } from "@/lib/currency";
+import { convertCurrency, currencyOptions, type CurrencyCode } from "@/lib/currency";
 import { defaultAuditInput, defaultTools } from "@/lib/default-audit";
 import { pricingCatalog } from "@/lib/audit-engine/pricing";
 import { auditInputSchema, type AuditInputValues } from "@/lib/validation/audit";
@@ -31,6 +31,7 @@ export function AuditForm() {
   const [step, setStep] = useState(0);
   const [isSubmitting, setSubmitting] = useState(false);
   const initialDraft = { ...defaultAuditInput, ...draft, apiUsage: { ...defaultAuditInput.apiUsage, ...draft.apiUsage } };
+  const previousCurrency = useRef<CurrencyCode>(initialDraft.currency);
   const form = useForm<AuditInputValues>({
     resolver: zodResolver(auditInputSchema),
     defaultValues: initialDraft,
@@ -46,6 +47,22 @@ export function AuditForm() {
   const currency = values.currency ?? "USD";
   const selectedTools = values.tools?.filter((tool) => tool.enabled) ?? [];
   const totalSpend = selectedTools.reduce((sum, tool) => sum + Number(tool.monthlySpend || 0), 0);
+
+  useEffect(() => {
+    const nextCurrency = values.currency;
+    const currentCurrency = previousCurrency.current;
+    if (!nextCurrency || nextCurrency === currentCurrency) return;
+
+    const tools = form.getValues("tools").map((tool) => ({
+      ...tool,
+      monthlySpend: convertCurrency(Number(tool.monthlySpend || 0), currentCurrency, nextCurrency)
+    }));
+    const tokenSpend = convertCurrency(Number(form.getValues("apiUsage.tokenSpend") || 0), currentCurrency, nextCurrency);
+
+    form.setValue("tools", tools, { shouldDirty: true, shouldValidate: true });
+    form.setValue("apiUsage.tokenSpend", tokenSpend, { shouldDirty: true, shouldValidate: true });
+    previousCurrency.current = nextCurrency;
+  }, [form, values.currency]);
 
   async function onSubmit(input: AuditInputValues) {
     setSubmitting(true);
@@ -99,6 +116,7 @@ export function AuditForm() {
                       <select className="mt-3 w-full rounded-xl border border-white/10 bg-[#0d111a] p-3" {...form.register("currency")}>
                         {currencyOptions.map((currency) => <option key={currency.code} value={currency.code}>{currency.label}</option>)}
                       </select>
+                      <span className="mt-2 block text-xs text-muted-foreground">Changing currency converts existing spend values.</span>
                     </label>
                   </div>
                   <div className="mt-6 grid gap-3 sm:grid-cols-5">

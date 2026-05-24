@@ -18,3 +18,7 @@ export function convertUsd(value: number, currency: CurrencyCode = "USD") {
   return value * usdExchangeRates[currency];
 }
 
+export function convertCurrency(value: number, from: CurrencyCode, to: CurrencyCode) {
+  const valueInUsd = value / usdExchangeRates[from];
+  return Math.round(valueInUsd * usdExchangeRates[to]);
+}
