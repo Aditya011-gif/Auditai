@@ -33,6 +33,20 @@ function baseRecommendation(tool: SelectedTool): ToolRecommendation {
 }
 
 function withSavings(rec: ToolRecommendation, optimizedSpend: number): ToolRecommendation {
+  if (optimizedSpend >= rec.currentSpend) {
+    return {
+      ...rec,
+      optimizedPlan: rec.currentPlan,
+      optimizedSpend: rec.currentSpend,
+      monthlySavings: 0,
+      annualSavings: 0,
+      confidence: Math.min(rec.confidence, 70),
+      explanation: `Your entered ${rec.toolName} spend is already below the estimated cost of the suggested optimization. Verify currency, credits, or discounts before changing this plan.`,
+      alternatives: ["Confirm invoice currency", "Check if credits are already applied", "Review again before renewal"],
+      action: "monitor"
+    };
+  }
+
   const monthlySavings = clampSavings(rec.currentSpend - optimizedSpend);
   return {
     ...rec,

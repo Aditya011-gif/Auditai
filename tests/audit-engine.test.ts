@@ -51,5 +51,14 @@ describe("audit engine", () => {
     expect(result.totals.monthlySavings).toBe(0);
     expect(result.recommendations[0].action).toBe("keep");
   });
-});
 
+  it("does not recommend a converted plan that costs more than current INR spend", () => {
+    const result = runAudit({
+      ...withOneTool({ id: "cursor", plan: "Business", seats: 4, monthlySpend: 800 }),
+      currency: "INR"
+    });
+    expect(result.totals.monthlySavings).toBe(0);
+    expect(result.recommendations[0].optimizedPlan).toBe("Business");
+    expect(result.recommendations[0].action).toBe("monitor");
+  });
+});
