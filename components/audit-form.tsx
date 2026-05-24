@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,8 +43,9 @@ export function AuditForm() {
     return () => sub.unsubscribe();
   }, [form, setDraft]);
 
-  const selectedTools = useMemo(() => values.tools?.filter((tool) => tool.enabled) ?? [], [values.tools]);
-  const totalSpend = useMemo(() => selectedTools.reduce((sum, tool) => sum + Number(tool.monthlySpend || 0), 0), [selectedTools]);
+  const currency = values.currency ?? "USD";
+  const selectedTools = values.tools?.filter((tool) => tool.enabled) ?? [];
+  const totalSpend = selectedTools.reduce((sum, tool) => sum + Number(tool.monthlySpend || 0), 0);
 
   async function onSubmit(input: AuditInputValues) {
     setSubmitting(true);
@@ -67,7 +68,7 @@ export function AuditForm() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <Link href="/" className="text-sm text-muted-foreground">AuditAI</Link>
-          <div className="text-sm text-muted-foreground">{formatCurrency(totalSpend, values.currency)}/mo selected</div>
+          <div className="text-sm text-muted-foreground">{formatCurrency(totalSpend, currency)}/mo selected</div>
         </div>
         <div className="glass rounded-2xl p-5 sm:p-7">
           <div className="mb-7 grid gap-2 sm:grid-cols-4">
@@ -117,7 +118,7 @@ export function AuditForm() {
                       <p className="mt-2 text-sm text-muted-foreground">Toggle tools you pay for, then adjust plan, spend, seats, and usage.</p>
                     </div>
                     <div className="rounded-full border border-white/10 bg-white/[.04] px-4 py-2 text-sm text-muted-foreground">
-                      {selectedTools.length} tools · {formatCurrency(totalSpend, values.currency)}/mo
+                      {selectedTools.length} tools · {formatCurrency(totalSpend, currency)}/mo
                     </div>
                   </div>
                   <div className="mt-6 grid gap-3">
@@ -181,11 +182,11 @@ export function AuditForm() {
                   <h1 className="text-3xl font-semibold">Review your audit</h1>
                   <div className="mt-6 rounded-2xl border border-white/10 bg-white/[.04] p-5">
                     <div className="text-sm text-muted-foreground">Estimated current AI spend</div>
-                    <div className="mt-2 text-5xl font-semibold">{formatCurrency(totalSpend, values.currency)}<span className="text-lg text-muted-foreground">/mo</span></div>
-                    <div className="mt-2 text-muted-foreground">{formatCurrency(totalSpend * 12, values.currency)} estimated annual cost</div>
+                    <div className="mt-2 text-5xl font-semibold">{formatCurrency(totalSpend, currency)}<span className="text-lg text-muted-foreground">/mo</span></div>
+                    <div className="mt-2 text-muted-foreground">{formatCurrency(totalSpend * 12, currency)} estimated annual cost</div>
                   </div>
                   <div className="mt-4 grid gap-3">
-                    {values.tools?.filter((tool) => tool.enabled).map((tool) => <div className="rounded-xl bg-white/[.04] p-3 text-sm" key={tool.id}>{pricingCatalog[tool.id].name} - {tool.plan} - {formatCurrency(tool.monthlySpend, values.currency)}</div>)}
+                    {values.tools?.filter((tool) => tool.enabled).map((tool) => <div className="rounded-xl bg-white/[.04] p-3 text-sm" key={tool.id}>{pricingCatalog[tool.id].name} - {tool.plan} - {formatCurrency(tool.monthlySpend, currency)}</div>)}
                   </div>
                   {form.formState.errors.root ? <p className="mt-4 text-sm text-rose-300">{form.formState.errors.root.message}</p> : null}
                 </motion.section>
