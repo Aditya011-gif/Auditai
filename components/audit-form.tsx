@@ -41,7 +41,8 @@ export function AuditForm() {
     return () => sub.unsubscribe();
   }, [form, setDraft]);
 
-  const totalSpend = useMemo(() => values.tools?.filter((tool) => tool.enabled).reduce((sum, tool) => sum + Number(tool.monthlySpend || 0), 0) ?? 0, [values.tools]);
+  const selectedTools = useMemo(() => values.tools?.filter((tool) => tool.enabled) ?? [], [values.tools]);
+  const totalSpend = useMemo(() => selectedTools.reduce((sum, tool) => sum + Number(tool.monthlySpend || 0), 0), [selectedTools]);
 
   async function onSubmit(input: AuditInputValues) {
     setSubmitting(true);
@@ -60,14 +61,14 @@ export function AuditForm() {
   }
 
   return (
-    <main className="min-h-screen bg-background bg-mesh px-4 py-8 text-foreground sm:px-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between">
+    <main className="min-h-screen bg-background bg-mesh px-4 py-7 text-foreground sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 flex items-center justify-between">
           <Link href="/" className="text-sm text-muted-foreground">AuditAI</Link>
           <div className="text-sm text-muted-foreground">{formatCurrency(totalSpend)}/mo selected</div>
         </div>
-        <div className="glass rounded-2xl p-5 sm:p-8">
-          <div className="mb-8 grid gap-2 sm:grid-cols-4">
+        <div className="glass rounded-2xl p-5 sm:p-7">
+          <div className="mb-7 grid gap-2 sm:grid-cols-4">
             {steps.map((label, index) => (
               <button key={label} className={`rounded-full px-4 py-2 text-sm ${index === step ? "bg-primary text-primary-foreground" : "bg-white/5 text-muted-foreground"}`} onClick={() => setStep(index)} type="button">
                 {index < step ? <Check className="mr-1 inline size-4" /> : null}{label}
@@ -102,38 +103,49 @@ export function AuditForm() {
               )}
               {step === 1 && (
                 <motion.section key="tools" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <h1 className="text-3xl font-semibold">Select your AI stack</h1>
-                  <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                    <div>
+                      <h1 className="text-3xl font-semibold">Select your AI stack</h1>
+                      <p className="mt-2 text-sm text-muted-foreground">Toggle tools you pay for, then adjust plan, spend, seats, and usage.</p>
+                    </div>
+                    <div className="rounded-full border border-white/10 bg-white/[.04] px-4 py-2 text-sm text-muted-foreground">
+                      {selectedTools.length} tools · {formatCurrency(totalSpend)}/mo
+                    </div>
+                  </div>
+                  <div className="mt-6 grid gap-3">
                     {(values.tools ?? defaultTools).map((tool, index) => {
                       const catalog = pricingCatalog[tool.id];
                       return (
-                        <div key={tool.id} className={`rounded-2xl border p-4 ${tool.enabled ? "border-primary/50 bg-primary/10" : "border-white/10 bg-white/[.04]"}`}>
-                          <label className="flex items-center justify-between gap-4">
-                            <span className="font-semibold">{catalog.name}</span>
-                            <input type="checkbox" {...form.register(`tools.${index}.enabled`)} />
-                          </label>
-                          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div key={tool.id} className={`rounded-2xl border p-4 transition ${tool.enabled ? "border-primary/45 bg-primary/[.08] shadow-[0_0_40px_rgba(45,212,191,.08)]" : "border-white/10 bg-white/[.035] hover:bg-white/[.055]"}`}>
+                          <div className="grid gap-4 md:grid-cols-[minmax(150px,1.05fr)_minmax(140px,1fr)_minmax(140px,1fr)_minmax(96px,.65fr)_minmax(150px,1fr)] md:items-end">
+                            <label className="flex min-h-16 items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/10 px-4 py-3 md:min-h-[70px]">
+                              <span>
+                                <span className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">Tool</span>
+                                <span className="mt-1 block font-semibold">{catalog.name}</span>
+                              </span>
+                              <input className="size-4 accent-primary" type="checkbox" {...form.register(`tools.${index}.enabled`)} />
+                            </label>
                             <label className="block">
                               <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">Plan</span>
-                              <select className="w-full rounded-xl border border-white/10 bg-[#0d111a] p-3" {...form.register(`tools.${index}.plan`)}>
+                              <select className="h-12 w-full rounded-xl border border-white/10 bg-[#0d111a] px-3 outline-none transition focus:border-primary/60" {...form.register(`tools.${index}.plan`)}>
                                 {catalog.plans.map((plan) => <option key={plan.plan} value={plan.plan}>{plan.plan}</option>)}
                               </select>
                             </label>
                             <label className="block">
                               <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">Monthly spend</span>
-                              <input aria-label={`${catalog.name} monthly spend`} className="w-full rounded-xl border border-white/10 bg-[#0d111a] p-3" type="number" min={0} {...form.register(`tools.${index}.monthlySpend`, { valueAsNumber: true })} />
+                              <input aria-label={`${catalog.name} monthly spend`} className="h-12 w-full rounded-xl border border-white/10 bg-[#0d111a] px-3 outline-none transition focus:border-primary/60" type="number" min={0} {...form.register(`tools.${index}.monthlySpend`, { valueAsNumber: true })} />
                             </label>
                             <label className="block">
                               <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">Seats</span>
-                              <input aria-label={`${catalog.name} seats`} className="w-full rounded-xl border border-white/10 bg-[#0d111a] p-3" type="number" min={1} {...form.register(`tools.${index}.seats`, { valueAsNumber: true })} />
+                              <input aria-label={`${catalog.name} seats`} className="h-12 w-full rounded-xl border border-white/10 bg-[#0d111a] px-3 outline-none transition focus:border-primary/60" type="number" min={1} {...form.register(`tools.${index}.seats`, { valueAsNumber: true })} />
+                            </label>
+                            <label className="block">
+                              <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">Usage</span>
+                              <select className="h-12 w-full rounded-xl border border-white/10 bg-[#0d111a] px-3 outline-none transition focus:border-primary/60" {...form.register(`tools.${index}.usageIntensity`)}>
+                              <option value="low">Low usage</option><option value="medium">Medium usage</option><option value="high">High usage</option>
+                              </select>
                             </label>
                           </div>
-                          <label className="mt-3 block">
-                            <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">Usage intensity</span>
-                            <select className="w-full rounded-xl border border-white/10 bg-[#0d111a] p-3" {...form.register(`tools.${index}.usageIntensity`)}>
-                              <option value="low">Low usage</option><option value="medium">Medium usage</option><option value="high">High usage</option>
-                            </select>
-                          </label>
                         </div>
                       );
                     })}
